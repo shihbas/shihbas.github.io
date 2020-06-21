@@ -1,0 +1,647 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="gitlab实践 --- 1.用docker部署gitlab, python">
+    <meta name="description" content="0. 前言在大学时就对gitlab有些简单的了解，不过那时候还是个青葱少年，觉得这种庞大的工具并不适合个人去“折腾”（PS:主要是懒，觉得github直接托管自己的烂代码就行了）,正式使用gitlab是在去年2月份了，开始使用除了代码管理相">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>gitlab实践 --- 1.用docker部署gitlab | python狗</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+    <style type="text/css">
+        
+    </style>
+
+    <script src="/libs/jquery/jquery-2.2.0.min.js"></script>
+<link rel="stylesheet" href="/css/prism.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+
+
+<body>
+
+<header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">python狗</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fa fa-navicon"></i></a>
+<ul class="right">
+    
+    <li class="hide-on-med-and-down">
+        <a href="/" class="waves-effect waves-light">
+            
+            <i class="fa fa-home"></i>
+            
+            <span>首页</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/tags" class="waves-effect waves-light">
+            
+            <i class="fa fa-tags"></i>
+            
+            <span>标签</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/categories" class="waves-effect waves-light">
+            
+            <i class="fa fa-bookmark"></i>
+            
+            <span>分类</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/archives" class="waves-effect waves-light">
+            
+            <i class="fa fa-archive"></i>
+            
+            <span>归档</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/about" class="waves-effect waves-light">
+            
+            <i class="fa fa-user-circle-o"></i>
+            
+            <span>关于</span>
+        </a>
+    </li>
+    
+    <li>
+        <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+            <i id="searchIcon" class="fa fa-search" title="搜索"></i>
+        </a>
+    </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">python狗</div>
+        <div class="logo-desc">
+            
+            与爱好相同的人交流喜欢的东西
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li>
+            <a href="/" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-home"></i>
+                
+                首页
+            </a>
+        </li>
+        
+        <li>
+            <a href="/tags" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-tags"></i>
+                
+                标签
+            </a>
+        </li>
+        
+        <li>
+            <a href="/categories" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-bookmark"></i>
+                
+                分类
+            </a>
+        </li>
+        
+        <li>
+            <a href="/archives" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-archive"></i>
+                
+                归档
+            </a>
+        </li>
+        
+        <li>
+            <a href="/about" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-user-circle-o"></i>
+                
+                关于
+            </a>
+        </li>
+        
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+    </nav>
+
+</header>
+
+
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('https://www.python-dog.com/images/hp/tools/gitlab/h1.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <div class="description center-align post-title">
+                        gitlab实践 --- 1.用docker部署gitlab
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<main class="container content">
+
+    
+    <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/gitlab/" target="_blank">
+                                <span class="chip bg-color">gitlab</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fa fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/tool/" class="post-category" target="_blank">
+                                tool
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                <div class="post-date info-break-policy">
+                    <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-03-01
+                </div>
+
+                
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
+                        2.4k
+                    </div>
+                    
+
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                        8 分
+                    </div>
+                    
+                
+				
+				<!-- 
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="fa fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				 -->
+            </div>
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h3 id="0-前言"><a href="#0-前言" class="headerlink" title="0. 前言"></a>0. 前言</h3><p>在大学时就对gitlab有些简单的了解，不过那时候还是个青葱少年，觉得这种庞大的工具并不适合个人去“折腾”（PS:主要是懒，觉得github直接托管自己的烂代码就行了）,正式使用gitlab是在去年2月份了，开始使用除了代码管理相关的功能还大概知道是个啥，剩下的都是</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/what.jpg" width="20%" height="20%">
+</div>
+
+<p>通过慢慢的摸索，知道了个大概，不过只能算作盲人摸象，只了解了自己知道的部分，于是有了自己搭建慢慢探索的想法，其中问题还是有很多的，于是决定分享出来从搭建到使用的个人经验。</p>
+<h3 id="1-准备部署"><a href="#1-准备部署" class="headerlink" title="1. 准备部署"></a>1. 准备部署</h3><p>gitlab 对硬件是有一定要求的，有兴趣的可以去看下<a href="https://docs.gitlab.com/ee/install/requirements.html" target="_blank" rel="noopener">官方文档</a>中具体的描述，另外多提一句，我的所有经验也都是看官方文档来的，它的文档十分健全。</p>
+<h4 id="下面列出了我搭建gitlab的服务器配置"><a href="#下面列出了我搭建gitlab的服务器配置" class="headerlink" title="下面列出了我搭建gitlab的服务器配置"></a>下面列出了我搭建gitlab的服务器配置</h4><ul>
+<li>操作系统：<a href="https://wiki.ubuntu.com/BionicBeaver/ReleaseNotes" target="_blank" rel="noopener">ubuntu 18.04 个人桌面版</a></li>
+<li>CPU： 4核/1.6GHz</li>
+<li>内存： 8GB</li>
+<li>硬盘： 200G SSD</li>
+</ul>
+<p>我用陪伴我走完大学四年的<a href="http://detail.zol.com.cn/series/16/16737_1.html" target="_blank" rel="noopener">戴尔灵越 14（3437)笔记本</a>装上ubuntu18，秒变服务器。这个系列笔记本已经停产了，就像我的青春一样永远定格在了那年。我推荐大家若手头有废弃的笔记本也可以像我这样当服务器用，而且<a href="http://detail.zol.com.cn/series/16/16737_1.html" target="_blank" rel="noopener">根据官方文档的安装建议</a>，若运行在使用内存不足4GB的系统上会有可能发生未知的500错误，腾讯/阿里云太贵了！！！，4GB没个千八的一年是下不来的，当然土豪就当我没说（说到这里留下了贫穷的泪水）</p>
+<p>最后，在这个机器上安装个docker，为什么非要用docker，之后会慢慢说明。可以根据<a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/" target="_blank" rel="noopener">官方文档</a>来一步一步安装。</p>
+<h3 id="2-开始部署"><a href="#2-开始部署" class="headerlink" title="2. 开始部署"></a>2. 开始部署</h3><h4 id="用docker部署gitlab"><a href="#用docker部署gitlab" class="headerlink" title="用docker部署gitlab"></a>用docker部署gitlab</h4><p>熟悉docker的都知道，部署docker服务只要有相关服务的image就行了，这也是我推荐用docker来部署这种复杂应用的原因，在我还没部署自己的gitlab时，搜索过部署相关的一些文章，我看到很多的问题都出在了环境配置等细节问题上的，我们想用gitlab，想研究它的使用等问题，不应该去关心那些细枝末节的问题。</p>
+<p>上面忘了说一点，我这里gitlab相关的文章都是基于CE版本的，也就是免费版，gitlab提供EE版，EE版的功能更加的强大，强大到所有的软件开发相关的所有流程用它就够了，不过太贵了！！！（又一次留下贫穷的泪水）</p>
+<p>在<a href="https://hub.docker.com/r/gitlab/gitlab-ce/" target="_blank" rel="noopener">gitlab-dockerhub</a>中选择一个你喜欢的版本pull下来（推荐gitlab/gitlab-ce:latest 我一直觉得最新的应该是最好的，要不为啥费劲升级），这个过程可能比较慢，它的image比较大。</p>
+<p>有了image之后就是运行简单的docker命令来将gitlab部署起来，命令如下：</p>
+<pre class="line-numbers language-bash"><code class="language-bash">
+docker run -d --restart<span class="token operator">=</span>always --name gitlab-ce \
+-p 8080:80 -p 8022:22 -p 8443:443 \
+-v /self-path:/etc/gitlab -v /self-path:/var/log/gitlab -v /self-path:/var/opt/gitlab \
+--hostname 127.0.0.1
+gitlab-ce:latest
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面的命令说明：</p>
+<ul>
+<li>restart=always 能保证在重启系统后docker能自动将gitlab-ce这个服务也一起启动了，也能在服务出错时主动尝试重启</li>
+<li>p xxxx:yyyy 是本地端口映射到容器内部，gitlab最需要的其实就两个80和22，443是当你设置了https时才有用的，可以不设置。</li>
+<li>v xxxx:yyyy 本地路径与容器内部路径的映射，这一项的三个都要配置，上面命令中写的<code>/self-path</code>是指任意的你想要存储gitlab数据的路径，推荐放到当前用户下就行了，<a href="gitlab/gitlab-ce:latest">gitlab文档</a>中对这几个目录存储内容进行了说明，不过看目录结构应该也能猜出个七七八八了</li>
+<li>hostname 这个需要配置，可以是ip或域名，若只自己在本地做研究，这个参数就配置为127.0.0.1</li>
+</ul>
+<p>执行完上面的命令之后就是等待，第一次总是漫长且痛苦。在等待的时候可以打开浏览器，访问 <a href="http://127.0.0.1:8080" target="_blank" rel="noopener">http://127.0.0.1:8080</a>，直到出现如下图</p>
+<!-- gitlab create 图片 -->
+<div align="center">
+<img src="https://www.python-dog.com/images/cut/gitlab/first_set.jpg" width="80%" height="80%">
+</div>
+
+<p>第一次运行成功后需要我们提供一个管理员密码，输入了合适的密码后会跳转到登陆页，用户名是root，密码是你刚才设置的，正确登陆后就能正式开始使用只属于你的gitlab了。</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/cut/gitlab/login.jpg" width="80%" height="80%">
+</div>
+
+<div align="center">
+<img src="https://www.python-dog.com/images/cut/gitlab/index.jpg" width="80%" height="80%">
+</div>
+
+<h3 id="3-使用中的问题"><a href="#3-使用中的问题" class="headerlink" title="3. 使用中的问题"></a>3. 使用中的问题</h3><p>现在，我们拥有了一个属于自己的gitlab，是不是打算撸起袖子咔咔咔的写下第一个自己的项目？</p>
+<p>当你创建了第一个项目，开始pull项目，你发现由于你弄的是私人项目在用http方式pull项目时需要你输入账号密码，你开心的输入了上面的管理员账号密码，心满意足的pull下了项目，是不是感觉，哇，好棒！你转念想，“我不能每次push/pull都输入密码吧，那我还怎么独享这美妙的Coding Moment”，于是你将本地的ssh公钥添加到了项目ssh-key管理中。</p>
+<p>“OK，可以开始美妙的Coding啦！” 你想着，并git pull了项目对应的ssh地址，奇怪的事情就发生了，你并不能pull下来。回想部署时，ssh端口并不是绑定的22，因为机器的22端口是被占据的。在痛斥为啥只能有一个22端口，大骂辣鸡gitlab为啥不解决这个问题后，你一定陷入沉思，可能会从史前文明想到晚饭是吃西红柿鸡蛋还是吃红烧牛肉，等你缓过神来，决定要给这个问题解决了！</p>
+<p>于是你打开浏览器，简单的搜索后发现这个也太简单了！直接修改ssh配置就好了，编辑用户目录下<code>.ssh/config</code>：</p>
+<pre class="line-numbers language-doc"><code class="language-doc">Host 127.0.0.1
+    Port 8022<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>再次pull/push 就完全没有问题了！</p>
+<p>你们会觉得上面说的那个“你”其实是我？怎么可能？我晚饭只会选老坛酸菜！</p>
+<p>到了这里基本的部署就完成了，若只是在本地自己玩那么可以关闭文章开始你的gitlab旅程了。若你真的想把它当一个服务用在自己的生活中，那么你就可能需要它能在公网中访问了。</p>
+<h3 id="4-公网访问自建的gitlab"><a href="#4-公网访问自建的gitlab" class="headerlink" title="4. 公网访问自建的gitlab"></a>4. 公网访问自建的gitlab</h3><p>公网访问这里，基本就和gitlab没有什么关系了，只要你部署在自己电脑上的服务想要通过公网能访问，这个方法都是适用的。</p>
+<p>由于我们个人是没有固定IP的，所以导致本地的服务不能通过固定IP暴露到公网上，针对这个问题最简单的方式就是找一个有固定IP的机器，然后将相应的访问转发到本地个人机器上就行了。</p>
+<p>这里我推荐的工具是 <a href="https://github.com/fatedier/frp/blob/master/README_zh.md" target="_blank" rel="noopener">【frp】</a></p>
+<p>那么固定的IP机器哪里能获得呢？还得去云服务商那里去买，你们会疑惑，“难道你说的土豪就是自己？”，No No No，我还是那个穷B，只是云服务商定期会打折出售低端的服务器（一般都是1核2G/1G的）一二百多块一年还是比较实惠的，用来转发流了这配置应该是够了。</p>
+<p><a href="https://github.com/fatedier/frp/blob/master/README_zh.md" target="_blank" rel="noopener">frp</a>十分强大，且有良好的文档，有兴趣的可以好好读一下，我不在赘述其他的，只讲我们如何做能让我们gitlab公网访问到。直接下载、打开它的<a href="https://github.com/fatedier/frp/releases" target="_blank" rel="noopener">release package</a>会看到下面有fprc和fprs两个命令，对应它的客户端和服务端程序，以下没有列出它的启动命令只列出配置信息，启动命令可以去文档中看一下。</p>
+<h4 id="1-本地启动frp客户端"><a href="#1-本地启动frp客户端" class="headerlink" title="1. 本地启动frp客户端"></a>1. 本地启动frp客户端</h4><p>由于我们需要将云服务机器的流量转发到个人机器上，所以需要在本地启动客户端。直接修改frp下的客户端配置文件<code>frpc.ini</code>内容为</p>
+<pre class="line-numbers language-doc"><code class="language-doc">[common]
+server_addr = [云服务器的IP]
+server_port = [云服务器暴露的端口]
+
+[gitlab-web]
+type = http
+local_port = [docker启动gitlab时设置的80对应端口，文章中的是8080]
+
+[gitlab-ssh]
+type = tcp
+local_ip = 127.0.0.1
+local_port = [docker启动gitlab时设置的22对应端口，文章中的是8022]
+remote_port = [服务端设置的ssh转发端口]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里要说明的一点是，这里要更改一下上面部署中的<code>hostname</code>，改为server_addr 对应的值。</p>
+<h4 id="2-服务器启动frp服务端"><a href="#2-服务器启动frp服务端" class="headerlink" title="2. 服务器启动frp服务端"></a>2. 服务器启动frp服务端</h4><p>在云服务器上启动frp的服务端，修改<code>frps.ini</code>为</p>
+<pre class="line-numbers language-doc"><code class="language-doc">[common]
+bind_port = [服务器暴露的端口，用于与客户端连接，该值和frpc.ini中的server_port应该相同]
+
+[ssh]
+listen_port = [服务器接收ssh请求的端口，用于将ssh请求转发到客户端，该值和frpc.ini中的remote_port应该是相同的]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里有一点要说明，<code>【3. 使用中的问题】</code> 中提到的本地ssh配置问题，Host 设置为服务器IP，Port 设置为 <code>listen_port</code></p>
+<p>到这里就可以在公网访问你的gitlab了！</p>
+
+            </div>
+            <hr/>
+
+            
+
+            <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    <div class="social-share" data-disabled="qzone" data-wechat-qrcode-helper="<p>微信里点“发现”->“扫一扫”二维码便可查看分享。</p>"></div>
+    
+</div>
+
+<script src="/libs/share/js/social-share.min.js"></script>
+
+            
+
+
+        </div>
+    </div>
+
+    
+        <link rel="stylesheet" href="/libs/gitalk/gitalk.css">
+<link rel="stylesheet" href="/css/my-gitalk.css">
+
+<div class="card gitalk-card" data-aos="fade-up">
+    <div id="gitalk-container" class="card-content"></div>
+</div>
+
+<script src="/libs/gitalk/gitalk.min.js"></script>
+<script>
+    let gitalk = new Gitalk({
+        clientID: '4356fcd402e5b0f205d9',
+        clientSecret: 'f339ee942803d8bc885cbae82f40c754fa3127b4',
+        repo: 'blog_comment',
+        owner: 'shihbas',
+        admin: "shihbas",
+        id: '2020-03-01T16-44-38',
+        distractionFreeMode: false  // Facebook-like distraction free mode
+    });
+
+    gitalk.render('gitalk-container');
+</script>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/2020/03/tools/gitlab/runner.html">
+                    <div class="card-image">
+                        
+                        <img src="https://www.python-dog.com/images/hp/tools/gitlab/h1.jpg" class="responsive-img" alt="gitlab实践 --- 2. Gitlab Runner 的使用心得">
+                        
+                        <span class="card-title">gitlab实践 --- 2. Gitlab Runner 的使用心得</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            如果只使用gitlab的代码托管功能，你或许会产生疑惑，“就这？就这？我直接托管在github上不香么？”，只有当你真正用上它的Runner服务，才发现“哇！gitlab，真香！”。
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2020-03-21
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/tool/" class="post-category" target="_blank">
+                                    tool
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/gitlab/" target="_blank">
+                        <span class="chip bg-color">gitlab</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2019/11/other/update.html">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/1.jpg" class="responsive-img" alt="更新blog事件记录">
+                        
+                        <span class="card-title">更新blog事件记录</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            记录blog的一些变化
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2019-11-15
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/other/" class="post-category" target="_blank">
+                                    other
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/update/" target="_blank">
+                        <span class="chip bg-color">update</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+</div>
+
+
+<script>
+    $('#articleContent').on('copy', function (e) {
+        // IE8 or earlier browser is 'undefined'
+        if (typeof window.getSelection === 'undefined') return;
+
+        var selection = window.getSelection();
+        // if the selection is short let's not annoy our users.
+        if (('' + selection).length < Number.parseInt('120')) {
+            return;
+        }
+
+        // create a div outside of the visible area and fill it with the selected text.
+        var bodyElement = document.getElementsByTagName('body')[0];
+        var newdiv = document.createElement('div');
+        newdiv.style.position = 'absolute';
+        newdiv.style.left = '-99999px';
+        bodyElement.appendChild(newdiv);
+        newdiv.appendChild(selection.getRangeAt(0).cloneContents());
+
+        // we need a <pre> tag workaround.
+        // otherwise the text inside "pre" loses all the line breaks!
+        if (selection.getRangeAt(0).commonAncestorContainer.nodeName === 'PRE') {
+            newdiv.innerHTML = "<pre>" + newdiv.innerHTML + "</pre>";
+        }
+
+        var url = document.location.href;
+        newdiv.innerHTML += '<br />'
+            + '来源: python狗<br />'
+            + '作者: shihbas<br />'
+            + '链接: <a href="' + url + '">' + url + '</a><br />'
+            + '本文章著作权归作者所有，任何形式的转载都请注明出处。';
+
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function () {bodyElement.removeChild(newdiv);}, 200);
+    });
+</script>
+
+
+    
+
+</main>
+
+
+<footer class="page-footer bg-color">
+    <div class="container row center-align">
+        <div class="col s12 m8 l8 copy-right">
+            本站由&copy;<a href="https://github.com/shihbas" target="_blank">Shihbas</a>基于
+            <a href="https://hexo.io/" target="_blank">Hexo</a> 的
+            <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">hexo-theme-matery</a>主题搭建.
+
+            
+                &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
+                <span class="white-color">5.3k</span>
+            
+
+            <!-- 
+			
+                <br>
+                
+                <span id="busuanzi_container_site_pv">
+                    <i class="fa fa-heart-o"></i>
+                    本站总访问量 <span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+                
+                
+                <span id="busuanzi_container_site_uv">
+                    <i class="fa fa-users"></i>
+                    次,&nbsp;访客数 <span id="busuanzi_value_site_uv" class="white-color"></span> 人.
+                </span>
+                
+             -->
+        <div class="blog-text-center">
+            © 2018-2019 python-dog 版权所有/ <a href="http://beian.gov.cn" target="_blank">冀ICP备17017632号</a> / Produced by crazy coding
+        </div>
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/shihbas" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fa fa-github"></i>
+    </a>
+
+
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=948945476" target="_blank" rel="noopener" class="tooltipped" data-tooltip="QQ联系我: 948945476" data-position="top" data-delay="50">
+        <i class="fa fa-qq"></i>
+    </a>
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+<!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fa fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+<!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fa fa-angle-up"></i>
+    </a>
+</div>
+
+
+<script src="/libs/materialize/materialize.min.js"></script>
+<script src="/libs/masonry/masonry.pkgd.min.js"></script>
+<script src="/libs/aos/aos.js"></script>
+<script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+<script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+<script src="/js/matery.js"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+
+
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+
+
+</body>
+</html>

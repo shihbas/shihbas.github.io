@@ -1,0 +1,760 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="gitlab实践 --- 2. Gitlab Runner 的使用心得, python">
+    <meta name="description" content="
+Gitlab Runner, Jenkins 见了会沉默，Travis 见了会流泪 — 鲁迅
+
+
+
+
+
+gitlab 部署篇 中的内容已经让我们能部署起一个熟悉自己的hub了，那到这里就结束了么？不！我们还需要研究更多gitlab的奥妙，">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>gitlab实践 --- 2. Gitlab Runner 的使用心得 | python狗</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+    <style type="text/css">
+        
+    </style>
+
+    <script src="/libs/jquery/jquery-2.2.0.min.js"></script>
+<link rel="stylesheet" href="/css/prism.css" type="text/css">
+<link rel="stylesheet" href="/css/prism-line-numbers.css" type="text/css"></head>
+
+
+<body>
+
+<header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">python狗</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fa fa-navicon"></i></a>
+<ul class="right">
+    
+    <li class="hide-on-med-and-down">
+        <a href="/" class="waves-effect waves-light">
+            
+            <i class="fa fa-home"></i>
+            
+            <span>首页</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/tags" class="waves-effect waves-light">
+            
+            <i class="fa fa-tags"></i>
+            
+            <span>标签</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/categories" class="waves-effect waves-light">
+            
+            <i class="fa fa-bookmark"></i>
+            
+            <span>分类</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/archives" class="waves-effect waves-light">
+            
+            <i class="fa fa-archive"></i>
+            
+            <span>归档</span>
+        </a>
+    </li>
+    
+    <li class="hide-on-med-and-down">
+        <a href="/about" class="waves-effect waves-light">
+            
+            <i class="fa fa-user-circle-o"></i>
+            
+            <span>关于</span>
+        </a>
+    </li>
+    
+    <li>
+        <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+            <i id="searchIcon" class="fa fa-search" title="搜索"></i>
+        </a>
+    </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">python狗</div>
+        <div class="logo-desc">
+            
+            与爱好相同的人交流喜欢的东西
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li>
+            <a href="/" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-home"></i>
+                
+                首页
+            </a>
+        </li>
+        
+        <li>
+            <a href="/tags" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-tags"></i>
+                
+                标签
+            </a>
+        </li>
+        
+        <li>
+            <a href="/categories" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-bookmark"></i>
+                
+                分类
+            </a>
+        </li>
+        
+        <li>
+            <a href="/archives" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-archive"></i>
+                
+                归档
+            </a>
+        </li>
+        
+        <li>
+            <a href="/about" class="waves-effect waves-light">
+                
+                <i class="fa fa-fw fa-user-circle-o"></i>
+                
+                关于
+            </a>
+        </li>
+        
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+    </nav>
+
+</header>
+
+
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('https://www.python-dog.com/images/hp/tools/gitlab/h1.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <div class="description center-align post-title">
+                        gitlab实践 --- 2. Gitlab Runner 的使用心得
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<main class="container content">
+
+    
+    <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/gitlab/" target="_blank">
+                                <span class="chip bg-color">gitlab</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fa fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/tool/" class="post-category" target="_blank">
+                                tool
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                <div class="post-date info-break-policy">
+                    <i class="fa fa-calendar-minus-o fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-03-21
+                </div>
+
+                
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-file-word-o fa-fw"></i>文章字数:&nbsp;&nbsp;
+                        383
+                    </div>
+                    
+
+                    
+                    <div class="info-break-policy">
+                        <i class="fa fa-clock-o fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                        1 分
+                    </div>
+                    
+                
+				
+				<!-- 
+                    <div id="busuanzi_container_page_pv" class="info-break-policy">
+                        <i class="fa fa-eye fa-fw"></i>阅读次数:&nbsp;&nbsp;
+                        <span id="busuanzi_value_page_pv"></span>
+                    </div>
+				 -->
+            </div>
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <blockquote>
+<p>Gitlab Runner, Jenkins 见了会沉默，Travis 见了会流泪 — 鲁迅</p>
+</blockquote>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/lx/whatever.jpg" width="50%" height="50%">
+</div>
+
+<p><a href="https://www.python-dog.com/2020/03/tools/gitlab/build.html">gitlab 部署篇</a> 中的内容已经让我们能部署起一个熟悉自己的hub了，那到这里就结束了么？不！我们还需要研究更多gitlab的奥妙，这里就来分享下关于<code>gitlab runner</code>的知识！</p>
+<h3 id="0-什么是Gitlab-Runner"><a href="#0-什么是Gitlab-Runner" class="headerlink" title="0. 什么是Gitlab Runner"></a>0. 什么是Gitlab Runner</h3><p>想必大家对<strong>CI/CD</strong>这个词并不陌生，它是<strong>持续集成/持续部署</strong>的英文简写，gitlab 中对持续集成的支持主要包括三个部分:</p>
+<ol>
+<li>gitlab code hub （gitlab项目主体） 用于托管代码</li>
+<li>gitlab ci (也包含在gitlab主体中) 用于调度项目中定义的ci/cd工作</li>
+<li>gitlab runner (单独的项目) 用于执行ci/cd中的具体job</li>
+</ol>
+<p>更便于理解的，如下图：</p>
+<pre class="line-numbers language-doc"><code class="language-doc">|push code|
+ |                          | - job1 ->  Runner-1
+  \                         |
+   ->  [Hub] -> [CI/CD] --> | - job2 ->  Runner-2
+  /                         |
+ |                          | - job3 ->  Runner-3
+|push code|
+
+\__________________________/\___________________/
+            |                         |
+            V                         V
+          gitlab服务器              其他服务器<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Runner 就是部署在其他的服务器上的一个服务。当有代码push到hub中，gitlab-ci会根据我们的<code>ci/cd</code>配置去执行相应的job，这些job实际的执行者就是gitlab-runner</p>
+<h3 id="1-Gitlab-Runner的部署"><a href="#1-Gitlab-Runner的部署" class="headerlink" title="1. Gitlab Runner的部署"></a>1. Gitlab Runner的部署</h3><p>对gitlab runner 的安装，其实没什么好分享的，它的<a href="https://docs.gitlab.com/runner/" target="_blank" rel="noopener">官方文档</a>中各个版本的<a href="https://docs.gitlab.com/runner/install/" target="_blank" rel="noopener">安装</a>都讲解的很详细，我主要介绍一些个人的理解。</p>
+<p>gitlab runner 的注册需要两个信息，CoordinatorURL和Token，这两个都是注册所需的关键，可以在gitlab全局配置(Admin Area下Runner项，以下简称为<strong>Runner管理页</strong>)中看到，如下图：</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/cut/gitlab/runner_manager.png" width="80%">
+</div
+
+<h4 id="0-用docker安装gitlab-runner"><a href="#0-用docker安装gitlab-runner" class="headerlink" title="0. 用docker安装gitlab runner"></a>0. 用docker安装gitlab runner</h4><p>可以在docker hub官网下载你喜欢的<a href="https://hub.docker.com/r/gitlab/gitlab-runner/tags" target="_blank" rel="noopener">gitlab runner image</a>版本，最好下载最新版本的，即<code>docker pull gitlab/gitlab-runner:latest</code>所下载的版本。</p>
+<p>docker的好处就不用多说了,用Gitlab Runner的好处也有很多，最大的好处我也在之前介绍gitlab安装中提到了，无需担心且不会遇到任何由于环境不同而出现的安装问题，所以，再次建议大家用docker吧</p>
+<pre class="line-numbers language-shell"><code class="language-shell"># docker 注册 gitlab runner
+docker run -v /self-path:/etc/gitlab-runner -v /var/run/docker.sock:/var/run/docker.sock gitlab/gitlab-runner:latest register<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>命令解释：</p>
+<ul>
+<li><code>/self-path:/etc/gitlab-runner</code>: 将runner 配置映射到本地目录，这个很重要！</li>
+<li><code>/var/run/docker.sock:/var/run/docker.sock</code>: 将本地的docker.sock与外部链接，这个是让docker runner启动docker类型的job的关键，后面会对它有更多的解释。</li>
+<li><code>register</code>: 注册，运行gitlab注册的工作。</li>
+</ul>
+<p>运行完上述命令会依次出现以下提示（由于runner版本不一样，提示的内容可能有区别，不过都是大同小异的）</p>
+<pre class="line-numbers language-shell"><code class="language-shell">Please enter the gitlab-ci coordinator URL (e.g. https://gitlab.com/):
+# 提示输入Coordinator,正常输入即可
+Please enter the gitlab-ci token for this runner:
+# 提示输入Token, 正常输入即可
+Please enter the gitlab-ci description for this runner:
+# 提示输入该runner的描述，这个可以随意输入
+Please enter the gitlab-ci tags for this runner (comma separated):
+# 提示输入该runner的tag，tag是gitlab-CI/CD调度job在runner上运行的标识，可以先随意设置，该值可以在AdminArea-Runner下修改
+Please enter the executor: custom, docker-ssh, parallels, shell, ssh, docker, virtualbox, docker+machine, docker-ssh+machine, kubernetes:
+# 提示选择runner的执行者类型，我这里只选择过docker,shell和docker+machine,shell是首选，它能满足我们的大部分需求，若选择了docker，我们需要选择默认的image
+Please enter the default Docker image(e.g. ruby:2.6):
+# 提示输入默认的docker image, 只有当执行者选择为docker时会提示。<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>输入完上述指令后，可检测下<strong>Runner管理页</strong>，应该已经出现了我们注册的runner，但细心的可能发现了，Runner 在线数还是显示为0，这是因为我们只注册了，并没有启动！启动命令就更加简单粗暴了！</p>
+<pre class="line-numbers language-shell"><code class="language-shell"># 启动gitlab runner
+docker run -d --restart=always --name gitlab-runner-1 -v /self-path:/etc/gitlab-runner -v /var/run/docker.sock:/var/run/docker.sock gitlab/gitlab-runner:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p><code>self-path</code>和注册中的path是一个，这个很好理解，注册将信息都报保存在了配置文件<code>config.toml</code>中了。查看我们指定的<code>self-path</code>可以看到确实有一个config.toml文件，内容类似如下:</p>
+<pre class="line-numbers language-doc"><code class="language-doc">concurrent = 1
+check_interval = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "xxxx"
+  url = "xxx"
+  token = "xxxx"
+  executor = "docker"
+  [runners.custom_build_dir]
+  [runners.docker]
+    tls_verify = false
+    image = "alpine:latest"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/var/run/docker.sock:/var/run/docker.sock", "/cache"]
+    shm_size = 0
+  [runners.cache]
+    [runners.cache.s3]
+    [runners.cache.gcs]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在我们启动之后，再次查看<strong>Runner管理页</strong>，这时候在线数应该已经是1了。</p>
+<p><strong>Runner管理页</strong>中可以配置各个runnerg归属的项目或tag等信息，很是方便，若想某个项目独享某个Runner，就需要我们设置这些了。runner分为三种：Shared, specific and group Runners， 具体可以参考<a href="https://docs.gitlab.com/ee/ci/runners/" target="_blank" rel="noopener">这里</a></p>
+<h4 id="1-在Ubuntu上部署Gitlab-Runner"><a href="#1-在Ubuntu上部署Gitlab-Runner" class="headerlink" title="1. 在Ubuntu上部署Gitlab Runner"></a>1. 在Ubuntu上部署Gitlab Runner</h4><p>这部分并没有什么好说的，和安装其他Ubuntu软件没有区别，按照<a href="https://docs.gitlab.com/runner/install/linux-manually.html" target="_blank" rel="noopener">官方文档</a>的介绍就能完成安装。</p>
+<p>安装后我们可以通过<code>sudo gitlab-runner -h</code> 来查看可执行的所有命令</p>
+<ul>
+<li><p><strong>注册</strong>的步骤和docker中的基本一致，在此我就不多赘述了。</p>
+</li>
+<li><p>在<strong>启动</strong>时候和docker中略有不同，因为docker中将所有命令都封装好了，所以我们直接运行就能启动一个Runner，但机器上启动的Runner需要我们自己去输入命令。</p>
+</li>
+</ul>
+<p>这里只大概说一下，大家可以去自己摸索其中的奥妙，整个过程分为三步<code>register -&gt; install -&gt; start</code>，register不多说了，<strong>install</strong>可以想象成我们安装一个runner到本地gitlab runner管理中心，start 就是启动一个已经install的runner。</p>
+<p>这三个步骤都有对应的disable命令<code>unregister, uninstall, stop</code>，可以很方便的完成本地runner的管理。</p>
+<p>这里再多提一句，Runner在install时最好指定一个user，这个user可以是我们新建一个用户（如tester）,否则可能会导致我们运行job时当前用户被runner占用的问题。我们可以这么理解下，每一个runner都是实际的linux用户，当runner指定的user和我们当前用户为一个时，若有job需要runner做时，必定会导致该用户被占用住。所以<strong>若没有特殊要求，最好分配一个独立的user给runner使用</strong></p>
+<p>更多的配置可以查看<a href="https://docs.gitlab.com/runner/configuration/" target="_blank" rel="noopener">gitlab runner配置官方文档</a>，在此不多赘述了。</p>
+<hr>
+<p>到这里部署一个实际的Runner就介绍完了，终于介绍完枯燥却必须的部分了！下面就开始runner的使用！</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/yc/yes.jpg" width="20%">
+</div>
+
+<h3 id="2-Gitlab-Runner的使用"><a href="#2-Gitlab-Runner的使用" class="headerlink" title="2. Gitlab Runner的使用"></a>2. Gitlab Runner的使用</h3><h4 id="0-gitlab-ci-yml的介绍与使用"><a href="#0-gitlab-ci-yml的介绍与使用" class="headerlink" title="0. gitlab-ci.yml的介绍与使用"></a>0. gitlab-ci.yml的介绍与使用</h4><p>在上面介绍的<em>什么是Gitlab Runner</em>中描述到当<strong>push code</strong>后会触发CI/CD，而这个触发规则，以及如何调度runner去执行哪个job等工作都是靠<strong>.gitlab-ci.yml</strong>做的，它是一个实际的文件，配置在我们项目的根目录（这个配置是可以在gitlab中修改的，理论上可以改到项目的任意目录下）。</p>
+<p>Runner执行具体的job，job根据<code>.gitlab-ci.yml</code>定义，<code>.gitlab-ci.yml</code>存在于code项目根目录下。</p>
+<p>假设我们的项目目录为：</p>
+<pre class="line-numbers language-doc"><code class="language-doc">- README.md
+- test.1
+- .gitlab-ci.yml
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>其中<code>.gitlab-ci.yml</code>中内容如下：</p>
+<pre class="line-numbers language-yml"><code class="language-yml"># 定义 stages
+stages:
+  - build
+  - build2
+
+# 定义 job
+job1:
+  stage: build
+  image: python:3.7.1
+  tags:
+    - runner-tag1
+  script:
+    - echo "I am job2"
+    - echo "I am in build stage"
+
+job2:
+  stage: build2
+  only:
+    refs:
+      - merge_requests
+  tags:
+    - runner-tag2
+  script:
+    - echo "I am job1"
+    - sleep 10
+    - git status<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li>stages： 为整个ci的入口，每个<code>push code</code>的请求都会顺序经过所有的步骤，并选择适合自己的步骤来执行</li>
+</ul>
+<hr>
+<ul>
+<li>job1: 定义的步骤具体内容，<code>job1</code>只是一个名字，可以随意命名。</li>
+<li>job1-stage: 步骤tag， 该值对应到 <code>stages</code></li>
+<li>job1-tags: runner tag，该值就是我们启动的runner所对应的那个tag名，可以选择多个runner来执行同一种job</li>
+<li>job1-script: job中执行的具体命令，shell脚本命令</li>
+<li>job1-image: 指定job使用的image，若使用该选项，那么runner 必须是一个docker执行者</li>
+</ul>
+<hr>
+<ul>
+<li>job2-only: 指定该job在那种情况下触发，上面描述的是当来自一个MR的请求时候才去触发该job。</li>
+</ul>
+<p>在我们按照个人喜好去编写了专属项目的<code>.gitlab-ci.yml</code>文件后，我们推送项目到hub中，可以看到流水线上运行起来了我们的job，点击进入job中我们可以看到，在最开始并不是执行我们的<code>scripts</code>，而是做了很多的其他工作，初始化了我们的当前项目代码库到job执行目录下，之后才执行的我们shell脚本命令。</p>
+<p>所以，任何能在本地运行的编译，测试，部署与发布工作，理论上都能靠gitlab runner做，无非是多种runner和多种job的组合而已。</p>
+<p><code>.gitlab-ci.yml</code>的配置有太多了！我相信能满足你的任何要求，可以查看<a href="https://docs.gitlab.com/ee/ci/yaml/README.html" target="_blank" rel="noopener">官方文档-gitlab-ci配置</a>，好好探索！</p>
+<p>面对这么全的官方文档，我真的不知道该分享什么了，它真的太全了！全的我都没坑可以填！</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/dog/confused.jpg" width="50%">
+</div>
+
+<h3 id="3-‘docker-in-docker’-在-Runner-中的使用"><a href="#3-‘docker-in-docker’-在-Runner-中的使用" class="headerlink" title="3. ‘docker in docker’ 在 Runner 中的使用"></a>3. ‘docker in docker’ 在 Runner 中的使用</h3><p>你们以为我真的没有什么想要分（水）享（字）的内容了么？你们想对了！</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/dog/angry.jpg" width="20%">
+</div>
+
+<p>思考半天还是觉得有必要提一下dind在Runner中的使用。</p>
+<p>在我们使用docker时第一步就是build image，而build其实只是一个简单的命令<code>docker build</code>，但这在Runner中有两个问题：</p>
+<ol>
+<li>Runner中没有docker，docker相关命令如何运行？</li>
+<li>image build完成后如何让别的Runner能使用？</li>
+</ol>
+<p>我先说下第2个问题，我暂时还没试验过，不过可以通过各种docker hub（自己搭建或者云服务）来解决，像hub的隐私性等问题（主要是login时的账号密码），可以用环境变量的方式保证部分安全性。</p>
+<p>问题1就涉及到了要介绍的dind，为了job能运行docker，我们需要做一下修改：</p>
+<ol>
+<li>将job的image设置为 <code>docker:dind</code>，这是dind的image</li>
+<li>将job对应的docker Runner的配置<code>privileged</code>修改为true</li>
+<li>重启对应的Runner</li>
+</ol>
+<p>这样，我们的runner 就能用docker了，用的docker就是我们物理机上的那个docker，所以千万不要执行一些危险命令，如删除等操作，最好只作为build image 来用。</p>
+<p>说道这里我其实还是很气，因为这个方法官方也在<a href="https://docs.gitlab.com/runner/executors/docker.html#use-docker-in-docker-with-privileged-mode" target="_blank" rel="noopener">文档</a>中清楚的标出来了，还用一个专门的<br>标签给列出来了！我是找了半个小时才从其他网站找到的这个方法！</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/doubt.jpg" width="30%">
+</div>
+
+<hr>
+<p>最后，希望大家能通过gitlab runner提高自己的效率，让烦人的ci/cd工作能进行的越来越顺利！</p>
+<p>之后还会分享下，在使用gitlab时的一些心得，这个系列就暂时告一段落了，但不断学习的的心永不停止。</p>
+<div align="center">
+<img src="https://www.python-dog.com/images/s/study.jpg" width="50%">
+</div>
+
+            </div>
+            <hr/>
+
+            
+
+            <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    <div class="social-share" data-disabled="qzone" data-wechat-qrcode-helper="<p>微信里点“发现”->“扫一扫”二维码便可查看分享。</p>"></div>
+    
+</div>
+
+<script src="/libs/share/js/social-share.min.js"></script>
+
+            
+
+
+        </div>
+    </div>
+
+    
+        <link rel="stylesheet" href="/libs/gitalk/gitalk.css">
+<link rel="stylesheet" href="/css/my-gitalk.css">
+
+<div class="card gitalk-card" data-aos="fade-up">
+    <div id="gitalk-container" class="card-content"></div>
+</div>
+
+<script src="/libs/gitalk/gitalk.min.js"></script>
+<script>
+    let gitalk = new Gitalk({
+        clientID: '4356fcd402e5b0f205d9',
+        clientSecret: 'f339ee942803d8bc885cbae82f40c754fa3127b4',
+        repo: 'blog_comment',
+        owner: 'shihbas',
+        admin: "shihbas",
+        id: '2020-03-21T19-34-30',
+        distractionFreeMode: false  // Facebook-like distraction free mode
+    });
+
+    gitalk.render('gitalk-container');
+</script>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fa fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/2020/06/tools/gitlab/skill.html">
+                    <div class="card-image">
+                        
+                        <img src="https://www.python-dog.com/images/hp/tools/gitlab/h1.jpg" class="responsive-img" alt="gitlab实践 --- 3. 使用 Gitlab 的技巧分享">
+                        
+                        <span class="card-title">gitlab实践 --- 3. 使用 Gitlab 的技巧分享</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            我在创建和使用gitlab过程中的一些心得体会与技巧，统统分享在篇里。
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="fa fa-clock-o fa-fw icon-date"></i>2020-06-21
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/tool/" class="post-category" target="_blank">
+                                    tool
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/gitlab/" target="_blank">
+                        <span class="chip bg-color">gitlab</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fa fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/03/tools/gitlab/build.html">
+                    <div class="card-image">
+                        
+                        <img src="https://www.python-dog.com/images/hp/tools/gitlab/h1.jpg" class="responsive-img" alt="gitlab实践 --- 1.用docker部署gitlab">
+                        
+                        <span class="card-title">gitlab实践 --- 1.用docker部署gitlab</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            gitlab很神奇，它可以说是一个“趋势”，集代码托管、项目开发规划、自动化测试与部署等软件开发流程中的所需功能于一身。让我们先自己搭建一个专属的gitlab来慢慢探究它的各项功能吧！
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="fa fa-clock-o fa-fw icon-date"></i>2020-03-01
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fa fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/tool/" class="post-category" target="_blank">
+                                    tool
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/gitlab/" target="_blank">
+                        <span class="chip bg-color">gitlab</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+</div>
+
+
+<script>
+    $('#articleContent').on('copy', function (e) {
+        // IE8 or earlier browser is 'undefined'
+        if (typeof window.getSelection === 'undefined') return;
+
+        var selection = window.getSelection();
+        // if the selection is short let's not annoy our users.
+        if (('' + selection).length < Number.parseInt('120')) {
+            return;
+        }
+
+        // create a div outside of the visible area and fill it with the selected text.
+        var bodyElement = document.getElementsByTagName('body')[0];
+        var newdiv = document.createElement('div');
+        newdiv.style.position = 'absolute';
+        newdiv.style.left = '-99999px';
+        bodyElement.appendChild(newdiv);
+        newdiv.appendChild(selection.getRangeAt(0).cloneContents());
+
+        // we need a <pre> tag workaround.
+        // otherwise the text inside "pre" loses all the line breaks!
+        if (selection.getRangeAt(0).commonAncestorContainer.nodeName === 'PRE') {
+            newdiv.innerHTML = "<pre>" + newdiv.innerHTML + "</pre>";
+        }
+
+        var url = document.location.href;
+        newdiv.innerHTML += '<br />'
+            + '来源: python狗<br />'
+            + '作者: shihbas<br />'
+            + '链接: <a href="' + url + '">' + url + '</a><br />'
+            + '本文章著作权归作者所有，任何形式的转载都请注明出处。';
+
+        selection.selectAllChildren(newdiv);
+        window.setTimeout(function () {bodyElement.removeChild(newdiv);}, 200);
+    });
+</script>
+
+
+    
+
+</main>
+
+
+<footer class="page-footer bg-color">
+    <div class="container row center-align">
+        <div class="col s12 m8 l8 copy-right">
+            本站由&copy;<a href="https://github.com/shihbas" target="_blank">Shihbas</a>基于
+            <a href="https://hexo.io/" target="_blank">Hexo</a> 的
+            <a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">hexo-theme-matery</a>主题搭建.
+
+            
+                &nbsp;<i class="fa fa-area-chart"></i>&nbsp;站点总字数:&nbsp;
+                <span class="white-color">5.3k</span>
+            
+
+            <!-- 
+			
+                <br>
+                
+                <span id="busuanzi_container_site_pv">
+                    <i class="fa fa-heart-o"></i>
+                    本站总访问量 <span id="busuanzi_value_site_pv" class="white-color"></span>
+                </span>
+                
+                
+                <span id="busuanzi_container_site_uv">
+                    <i class="fa fa-users"></i>
+                    次,&nbsp;访客数 <span id="busuanzi_value_site_uv" class="white-color"></span> 人.
+                </span>
+                
+             -->
+        <div class="blog-text-center">
+            © 2018-2019 python-dog 版权所有/ <a href="http://beian.gov.cn" target="_blank">冀ICP备17017632号</a> / Produced by crazy coding
+        </div>
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/shihbas" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fa fa-github"></i>
+    </a>
+
+
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=948945476" target="_blank" rel="noopener" class="tooltipped" data-tooltip="QQ联系我: 948945476" data-position="top" data-delay="50">
+        <i class="fa fa-qq"></i>
+    </a>
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+<!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fa fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+<!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fa fa-angle-up"></i>
+    </a>
+</div>
+
+
+<script src="/libs/materialize/materialize.min.js"></script>
+<script src="/libs/masonry/masonry.pkgd.min.js"></script>
+<script src="/libs/aos/aos.js"></script>
+<script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+<script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+<script src="/js/matery.js"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+
+
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+
+
+</body>
+</html>
